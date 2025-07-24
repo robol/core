@@ -1553,6 +1553,8 @@ build.json @home-assistant/supervisor
 /tests/components/tautulli/ @ludeeus @tkdrob
 /homeassistant/components/technove/ @Moustachauve
 /tests/components/technove/ @Moustachauve
+/homeassistant/components/tecnosystemi/ @robol
+/tests/components/tecnosystemi/ @robol
 /homeassistant/components/tedee/ @patrickhilker @zweckj
 /tests/components/tedee/ @patrickhilker @zweckj
 /homeassistant/components/telegram_bot/ @hanwg

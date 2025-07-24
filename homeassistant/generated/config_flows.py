@@ -635,6 +635,7 @@ FLOWS = {
         "tasmota",
         "tautulli",
         "technove",
+        "tecnosystemi",
         "tedee",
         "telegram_bot",
         "tellduslive",
