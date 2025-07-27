@@ -90,7 +90,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     # return {"title": "TecnoSystemi Cloud"}
 
 
-class TecnosystemiConfigFlow(ConfigFlow, domain=DOMAIN):
+class TecnoSystemiConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Tecnosystemi."""
 
     VERSION = 1

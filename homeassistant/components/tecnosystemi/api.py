@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 
 class Device:
-    """Represents a device in the Tecnosystemi system."""
+    """Represents a device in the TecnoSystemi system."""
 
     def __init__(self, data):
         """Initialize the device with data from the API."""
@@ -32,7 +32,7 @@ class Device:
 
 
 class Plant:
-    """Represents a plant in the Tecnosystemi system."""
+    """Represents a plant in the TecnoSystemi system."""
 
     def __init__(self, data):
         """Initialize the plant with data from the API."""
@@ -48,7 +48,7 @@ class Plant:
 
 
 class AESTool:
-    """AES encryption/decryption utility for Tecnosystemi API."""
+    """AES encryption/decryption utility for TecnoSystemi API."""
 
     def __init__(self, salt: str) -> None:
         """Initialize the AES tool with a salt."""
@@ -88,7 +88,7 @@ class AESTool:
 
 
 class TecnoSystemiAPI:
-    """Client for interacting with the Tecnosystemi cloud API."""
+    """Client for interacting with the TecnoSystemi cloud API."""
 
     def __init__(self, device_id, username, password):
         """Initialize the API client with credentials and device ID."""
@@ -174,10 +174,13 @@ class TecnoSystemiAPI:
         data = {
             "Serial": device.Serial,
             "Pin": pin,
-            "Command": json.dumps(cmd),
             "ZoneId": zoneid,
             "Name": device.Name,
+            "Cmd": json.dumps(cmd),
         }
+
+        # print("Update data:", data)
+        # return None
 
         url = self.base_url + "/api/v1/UpdateZonaData"
         auth = aiohttp.BasicAuth(self.username, "PwdProAir")
@@ -185,6 +188,7 @@ class TecnoSystemiAPI:
         async with self.session.post(
             url, json=data, auth=auth, headers=headers
         ) as response:
+            # print("Update response status:", response.status, "Content:", await response.text())
             if response.status == 200:
                 response_data = await response.json()
                 if response_data.get("ResCode") == 0:

@@ -12,7 +12,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 _LOGGER = logging.getLogger(__name__)
 
 
-class TecnosystemiCoordinator(DataUpdateCoordinator):
+class TecnoSystemiCoordinator(DataUpdateCoordinator):
     """My custom coordinator."""
 
     def __init__(self, hass, config_entry, api):
@@ -33,6 +33,8 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
         self.api = api
         self._plants = []
 
+        self.last_request_failed = False
+
     async def _async_setup(self):
         """Set up the coordinator.
 
@@ -52,6 +54,10 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
         so entities can quickly look up their data.
         """
         data = {}
+
+        if self.last_request_failed:
+            _LOGGER.warning("Last request failed, triggering new login")
+            await self.api.login()
 
         try:
             # Note: asyncio.TimeoutError and aiohttp.ClientError are already
@@ -93,4 +99,5 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
 
                     return data
         except RuntimeError as err:
+            self.last_request_failed = True
             raise UpdateFailed(f"Error communicating with API: {err}") from None
