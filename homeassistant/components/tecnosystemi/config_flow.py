@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import logging
+import secrets
 from typing import Any
 
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.const import CONF_PASSWORD, CONF_PIN, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
+from .api import TecnoSystemiAPI
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,6 +22,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_PIN): str,
     }
 )
 
@@ -38,6 +41,11 @@ class PlaceholderHub:
         return True
 
 
+def generate_random_hex_id() -> str:
+    """Generate a random 16-character hexadecimal string."""
+    return secrets.token_hex(8)
+
+
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input allows us to connect.
 
@@ -53,7 +61,25 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     # We need to check for authentication here, I guess
     # if data[CONF_USERNAME] ... data[CONF_PASSWORD] .. etc
 
-    raise InvalidAuth("Invalid username or password")  # Example of raising an error
+    device_id = generate_random_hex_id()
+
+    api = TecnoSystemiAPI(
+        username=data[CONF_USERNAME], password=data[CONF_PASSWORD], device_id=device_id
+    )
+
+    try:
+        await api.login()
+    except RuntimeError as e:
+        _LOGGER.error("Failed to login to Tecnosystemi API: %s", e)
+        raise InvalidAuth("Invalid username or password") from None
+
+    return {
+        "title": "TecnoSystemi",
+        "username": data[CONF_USERNAME],
+        "password": data[CONF_PASSWORD],
+        "pin": data[CONF_PIN],
+        "device_id": device_id,
+    }
 
     # If you cannot connect:
     # throw CannotConnect
@@ -85,10 +111,10 @@ class TecnosystemiConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
+                user_input["device_id"] = info["device_id"]
                 return self.async_create_entry(title=info["title"], data=user_input)
 
-        await self.async_set_unique_id("XXXXXXXX")
-        self._abort_if_unique_id_configured()
+        await self._async_handle_discovery_without_unique_id()
 
         return self.async_show_form(
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
