@@ -119,6 +119,9 @@ class TecnosystemiAPI:
             # It is currently not documented what the token expiry time is,
             # but in practice it seems to be a few hours; hence, we renew it
             # after 1 hour to be on the safe side.
+            #
+            # Update: it appears that the token expiry is 3 hours. We still
+            # set it to 1 hour for safety.
             self.token_expiry = time.time() + 3600
         else:
             raise ValueError("Invalid token format")
