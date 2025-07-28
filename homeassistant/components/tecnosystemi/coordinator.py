@@ -65,6 +65,15 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
                             device, self.config_entry.data[CONF_PIN]
                         )
 
+                        # Note that this call might fail in case the user has logged in with the
+                        # same email using the Tecnosystemi app on his/her personal device. In that
+                        # case, we force a new login and try again.
+                        if state is None:
+                            await self.api.login()
+                            state = await self.api.getDeviceState(
+                                device, self.config_entry.data[CONF_PIN]
+                            )
+
                         for zone in state["Zones"]:
                             # print("  Zone:", zone["Name"], "ID:", zone["ZoneId"])
                             zone["Device"] = device
