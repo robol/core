@@ -13,7 +13,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_PIN, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
-from .api import TecnoSystemiAPI
+from .api import TecnosystemiAPI
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
     device_id = generate_random_hex_id()
 
-    api = TecnoSystemiAPI(
+    api = TecnosystemiAPI(
         username=data[CONF_USERNAME], password=data[CONF_PASSWORD], device_id=device_id
     )
 
@@ -74,7 +74,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         raise InvalidAuth("Invalid username or password") from None
 
     return {
-        "title": "TecnoSystemi",
+        "title": "Tecnosystemi",
         "username": data[CONF_USERNAME],
         "password": data[CONF_PASSWORD],
         "pin": data[CONF_PIN],
@@ -87,10 +87,10 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     # InvalidAuth
 
     # Return info that you want to store in the config entry.
-    # return {"title": "TecnoSystemi Cloud"}
+    # return {"title": "Tecnosystemi Cloud"}
 
 
-class TecnoSystemiConfigFlow(ConfigFlow, domain=DOMAIN):
+class TecnosystemiConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Tecnosystemi."""
 
     VERSION = 1

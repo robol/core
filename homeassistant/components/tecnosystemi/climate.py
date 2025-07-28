@@ -16,9 +16,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import TecnosystemiConfigEntry
-from .api import TecnoSystemiAPI
+from .api import TecnosystemiAPI
 from .const import DOMAIN
-from .coordinator import TecnoSystemiCoordinator
+from .coordinator import TecnosystemiCoordinator
 
 
 async def async_setup_entry(
@@ -29,13 +29,13 @@ async def async_setup_entry(
     """Set up the Tecnosystemi climate entities from a config entry."""
     api = entry.runtime_data
 
-    coordinator = TecnoSystemiCoordinator(hass, entry, api)
+    coordinator = TecnosystemiCoordinator(hass, entry, api)
 
     await coordinator.async_config_entry_first_refresh()
 
     entities = []
     for device_id in coordinator.data:
-        entity = TecnoSystemiClimateEntity(
+        entity = TecnosystemiClimateEntity(
             device_id=device_id,
             zone=coordinator.data[device_id],
             coordinator=coordinator,
@@ -47,8 +47,8 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class TecnoSystemiClimateEntity(CoordinatorEntity, ClimateEntity):
-    """Minimal Climate entity for TecnoSystemi integration."""
+class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
+    """Minimal Climate entity for Tecnosystemi integration."""
 
     _attr_has_entity_name = False
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
@@ -61,8 +61,8 @@ class TecnoSystemiClimateEntity(CoordinatorEntity, ClimateEntity):
         self,
         device_id: str,
         zone: dict,
-        coordinator: TecnoSystemiCoordinator,
-        api: TecnoSystemiAPI,
+        coordinator: TecnosystemiCoordinator,
+        api: TecnosystemiAPI,
         pin: str,
     ) -> None:
         """Initialize the climate entity."""

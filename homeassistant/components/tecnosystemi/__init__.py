@@ -7,11 +7,11 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from .api import TecnoSystemiAPI
+from .api import TecnosystemiAPI
 
 _PLATFORMS: list[Platform] = [Platform.CLIMATE]
 
-type TecnosystemiConfigEntry = ConfigEntry[TecnoSystemiAPI]
+type TecnosystemiConfigEntry = ConfigEntry[TecnosystemiAPI]
 
 
 async def async_setup_entry(
@@ -19,12 +19,9 @@ async def async_setup_entry(
 ) -> bool:
     """Set up Tecnosystemi from a config entry."""
 
-    # entry.data contains username and password
-    # device_id = hashlib.sha256(entry.entry_id.encode()).hexdigest()[:16]
     device_id = entry.data["device_id"]
-    # print("Obtained unique device ID:", entry.data["device_id"])
 
-    entry.runtime_data = TecnoSystemiAPI(
+    entry.runtime_data = TecnosystemiAPI(
         username=entry.data["username"],
         password=entry.data["password"],
         device_id=device_id,

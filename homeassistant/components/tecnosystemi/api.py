@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 
 class Device:
-    """Represents a device in the TecnoSystemi system."""
+    """Represents a device in the Tecnosystemi system."""
 
     def __init__(self, data):
         """Initialize the device with data from the API."""
@@ -33,7 +33,7 @@ class Device:
 
 
 class Plant:
-    """Represents a plant in the TecnoSystemi system."""
+    """Represents a plant in the Tecnosystemi system."""
 
     def __init__(self, data):
         """Initialize the plant with data from the API."""
@@ -49,7 +49,7 @@ class Plant:
 
 
 class AESTool:
-    """AES encryption/decryption utility for TecnoSystemi API."""
+    """AES encryption/decryption utility for Tecnosystemi API."""
 
     def __init__(self, salt: str) -> None:
         """Initialize the AES tool with a salt."""
@@ -88,8 +88,8 @@ class AESTool:
         return decrypted.decode("utf-8")
 
 
-class TecnoSystemiAPI:
-    """Client for interacting with the TecnoSystemi cloud API."""
+class TecnosystemiAPI:
+    """Client for interacting with the Tecnosystemi cloud API."""
 
     def __init__(self, device_id, username, password):
         """Initialize the API client with credentials and device ID."""
