@@ -58,9 +58,6 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     #     your_validate_func, data[CONF_USERNAME], data[CONF_PASSWORD]
     # )
 
-    # We need to check for authentication here, I guess
-    # if data[CONF_USERNAME] ... data[CONF_PASSWORD] .. etc
-
     device_id = generate_random_hex_id()
 
     api = TecnosystemiAPI(
@@ -80,14 +77,6 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         "pin": data[CONF_PIN],
         "device_id": device_id,
     }
-
-    # If you cannot connect:
-    # throw CannotConnect
-    # If the authentication is wrong:
-    # InvalidAuth
-
-    # Return info that you want to store in the config entry.
-    # return {"title": "Tecnosystemi Cloud"}
 
 
 class TecnosystemiConfigFlow(ConfigFlow, domain=DOMAIN):

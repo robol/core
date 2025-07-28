@@ -20,14 +20,9 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
         super().__init__(
             hass,
             _LOGGER,
-            # Name of the data. For logging purposes.
             name="Tecnosystemi Climate Coordinator",
             config_entry=config_entry,
-            # Polling interval. Will only be polled if there are subscribers.
             update_interval=timedelta(seconds=30),
-            # Set always_update to `False` if the data returned from the
-            # api can be compared via `__eq__` to avoid duplicate updates
-            # being dispatched to listeners
             always_update=True,
         )
         self.api = api
@@ -55,7 +50,7 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
         try:
             # Note: asyncio.TimeoutError and aiohttp.ClientError are already
             # handled by the data update coordinator.
-            async with asyncio.timeout(10):
+            async with asyncio.timeout(15):
                 for plant in self._plants:
                     for device in plant.getDevices():
                         # To actually find the zone thermostats, we need to get the state;
@@ -66,7 +61,6 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
                         )
 
                         for zone in state["Zones"]:
-                            # print("  Zone:", zone["Name"], "ID:", zone["ZoneId"])
                             zone["Device"] = device
                             zone["Plant"] = plant
                             data[
