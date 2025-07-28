@@ -27,11 +27,8 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the Tecnosystemi climate entities from a config entry."""
-    api = entry.runtime_data
-
-    coordinator = TecnosystemiCoordinator(hass, entry, api)
-
-    await coordinator.async_config_entry_first_refresh()
+    coordinator: TecnosystemiCoordinator = entry.runtime_data
+    api = coordinator.api
 
     entities = []
     for device_id in coordinator.data:

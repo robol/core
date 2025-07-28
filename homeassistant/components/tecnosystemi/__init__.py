@@ -8,10 +8,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .api import TecnosystemiAPI
+from .coordinator import TecnosystemiCoordinator
 
-_PLATFORMS: list[Platform] = [Platform.CLIMATE]
+_PLATFORMS: list[Platform] = [Platform.CLIMATE, Platform.SENSOR]
 
-type TecnosystemiConfigEntry = ConfigEntry[TecnosystemiAPI]
+type TecnosystemiConfigEntry = ConfigEntry[TecnosystemiCoordinator]
 
 
 async def async_setup_entry(
@@ -21,18 +22,30 @@ async def async_setup_entry(
 
     device_id = entry.data["device_id"]
 
-    entry.runtime_data = TecnosystemiAPI(
+    api = TecnosystemiAPI(
         username=entry.data["username"],
         password=entry.data["password"],
         device_id=device_id,
     )
 
+    entry.runtime_data = TecnosystemiCoordinator(
+        hass=hass,
+        config_entry=entry,
+        api=api,
+    )
+
     try:
-        await entry.runtime_data.login()
+        await api.login()
     except RuntimeError:
         raise ConfigEntryNotReady(
-            "Tecnosystemi API is not ready. Please check your configuration."
+            "Tecnosystemi API is not ready due to login problems. Please check your configuration."
         ) from None
+
+    await entry.runtime_data.async_config_entry_first_refresh()
+    if not entry.runtime_data.data:
+        raise ConfigEntryNotReady(
+            "Tecnosystemi API did not return any data. Please check your configuration."
+        )
 
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
 
