@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import time
 
 import aiohttp
 from cryptography.hazmat.backends import default_backend
@@ -100,6 +101,7 @@ class TecnoSystemiAPI:
         self.base_url = "https://proair.azurewebsites.net"
         self.token = None
         self.counter = 0
+        self.token_expiry = 0  # This is a timestamp for when the token expires
         self.user_id = None
         self.session = aiohttp.ClientSession()
 
@@ -113,13 +115,27 @@ class TecnoSystemiAPI:
         if len(splitted_token) == 2:
             self.token = splitted_token[0]
             self.counter = int(splitted_token[1])
+
+            # It is currently not documented what the token expiry time is,
+            # but in practice it seems to be a few hours; hence, we renew it
+            # after 1 hour to be on the safe side.
+            self.token_expiry = time.time() + 3600
         else:
             raise ValueError("Invalid token format")
 
-    def calcToken(self):
+    async def calcToken(self):
         """Calculate the new token using the stored token and counter."""
         if self.token is None:
             return None
+
+        # If the token is expired, we need to perform a new login
+        if time.time() >= self.token_expiry:
+            await self.login()
+
+            # In case the login fails and token cannot be obtained,
+            # we just return None to mean that the API is not available
+            if self.token is None:
+                return None
 
         self.counter += 1  # Increment the counter for each token calculation
 
@@ -128,7 +144,7 @@ class TecnoSystemiAPI:
 
     async def GetPlants(self):
         """Get the list of plants from the Tecnosystemi API."""
-        token = self.calcToken()
+        token = await self.calcToken()
         if token is None:
             raise RuntimeError("Token is not available")
         url = self.base_url + "/api/v1/GetPlants"
@@ -144,7 +160,7 @@ class TecnoSystemiAPI:
 
     async def getDeviceState(self, device, pin):
         """Get the state of a specific device."""
-        token = self.calcToken()
+        token = await self.calcToken()
         if token is None:
             raise RuntimeError("Token is not available")
         url = self.base_url + f"/api/v1/GetCUState?cuSerial={device.Serial}&PIN={pin}"
@@ -157,7 +173,7 @@ class TecnoSystemiAPI:
 
     async def updateDeviceState(self, device, pin, zoneid, cmd):
         """Update the state of a specific device."""
-        token = self.calcToken()
+        token = await self.calcToken()
         if token is None:
             raise RuntimeError("Token is not available")
 
@@ -179,16 +195,12 @@ class TecnoSystemiAPI:
             "Cmd": json.dumps(cmd),
         }
 
-        # print("Update data:", data)
-        # return None
-
         url = self.base_url + "/api/v1/UpdateZonaData"
         auth = aiohttp.BasicAuth(self.username, "PwdProAir")
         headers = {"Token": token, "Content-Type": "application/json"}
         async with self.session.post(
             url, json=data, auth=auth, headers=headers
         ) as response:
-            # print("Update response status:", response.status, "Content:", await response.text())
             if response.status == 200:
                 response_data = await response.json()
                 if response_data.get("ResCode") == 0:
@@ -221,7 +233,6 @@ class TecnoSystemiAPI:
             if response.status == 200:
                 login_data = await response.json()
                 if login_data.get("ResCode") != 0:
-                    # print("Login failed with error code:", login_data.get("ResCode"))
                     raise RuntimeError(
                         f"Login failed with error code: {login_data.get('ResCode')}"
                     )
