@@ -50,7 +50,7 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
         try:
             # Note: asyncio.TimeoutError and aiohttp.ClientError are already
             # handled by the data update coordinator.
-            async with asyncio.timeout(15):
+            async with asyncio.timeout(30):
                 for plant in self._plants:
                     for device in plant.getDevices():
                         # To actually find the zone thermostats, we need to get the state;
