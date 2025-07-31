@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.climate import (
+    FAN_AUTO,
+    FAN_HIGH,
+    FAN_LOW,
+    FAN_MEDIUM,
     ClimateEntity,
     ClimateEntityFeature,
     HVACMode,
@@ -49,10 +53,14 @@ class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
 
     _attr_has_entity_name = False
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
-    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
+    _attr_supported_features = (
+        ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
+    )
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL]
     _attr_hvac_mode = HVACMode.OFF
-    _attr_hvac_action = None  # Could be none, "heating", "cooling"
+    _attr_hvac_action = None
+    _attr_fan_modes = [FAN_AUTO, FAN_HIGH, FAN_MEDIUM, FAN_LOW]
+    _attr_fan_mode = FAN_AUTO
 
     def __init__(
         self,
@@ -92,6 +100,16 @@ class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
         self._attr_target_temperature = float(self.zone_state["SetTemp"]) / 10.0
         self._attr_current_humidity = float(self.zone_state.get("Umd", 0)) / 10.0
 
+        fan_mode = self.zone_state.get("SerrandaSet")
+        if fan_mode in [0, 16]:
+            self._attr_fan_mode = FAN_AUTO
+        elif fan_mode == 1:
+            self._attr_fan_mode = FAN_LOW
+        elif fan_mode == 2:
+            self._attr_fan_mode = FAN_MEDIUM
+        elif fan_mode == 3:
+            self._attr_fan_mode = FAN_HIGH
+
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
@@ -129,5 +147,44 @@ class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
             "is_off": 1 if hvac_mode == HVACMode.OFF else 0,
             "t_set": str(int(self._attr_target_temperature * 10)),
             "name": self.zone_state["Name"],
+            "shu_set": self.get_serranda_set(),
+            "fan_set": self.get_serranda_set(),
+        }
+        await self.async_send_command(cmd)
+
+    def get_serranda_set(self):
+        """Get the serranda set value based on the current fan mode."""
+        if self._attr_fan_mode == FAN_AUTO:
+            return 16
+        if self._attr_fan_mode == FAN_LOW:
+            return 1
+        if self._attr_fan_mode == FAN_MEDIUM:
+            return 2
+        if self._attr_fan_mode == FAN_HIGH:
+            return 3
+        return 0
+
+    async def async_set_fan_mode(self, fan_mode: str) -> None:
+        """Set new fan mode."""
+        if self._attr_target_temperature is None:
+            return
+
+        if fan_mode == FAN_AUTO:
+            serranda_set = 16
+        elif fan_mode == FAN_LOW:
+            serranda_set = 1
+        elif fan_mode == FAN_MEDIUM:
+            serranda_set = 2
+        elif fan_mode == FAN_HIGH:
+            serranda_set = 3
+        else:
+            serranda_set = 0
+
+        cmd = {
+            "shu_set": serranda_set,
+            "fan_set": serranda_set,
+            "name": self.zone_state["Name"],
+            "t_set": str(int(self._attr_target_temperature * 10)),
+            "is_off": 1 if self._attr_hvac_mode == HVACMode.OFF else 0,
         }
         await self.async_send_command(cmd)
