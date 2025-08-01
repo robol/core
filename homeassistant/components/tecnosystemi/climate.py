@@ -215,9 +215,27 @@ class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
 
     def update_attrs_from_state(self):
         """Update attributes from the current state."""
-        self._attr_hvac_mode = (
-            HVACMode.OFF if self.zone_state["IsOFF"] else HVACMode.AUTO
-        )
+
+        # Check the mode of the master
+        if not self.zone_state["DeviceState"]["IsCooling"]:
+            hvac_master_mode = HVACMode.HEAT
+        elif self.zone_state["DeviceState"]["OperatingModeCooling"] == 1:
+            hvac_master_mode = HVACMode.COOL
+        elif self.zone_state["DeviceState"]["OperatingModeCooling"] == 2:
+            hvac_master_mode = HVACMode.DRY
+        elif self.zone_state["DeviceState"]["OperatingModeCooling"] == 3:
+            hvac_master_mode = HVACMode.FAN_ONLY
+        else:
+            _LOGGER("Unsupported OperatingModeCooling in Tecnosystemi integration")
+
+        if self.zone_state["DeviceState"]["IsOFF"]:
+            self._attr_hvac_modes = [HVACMode.OFF]
+            self._attr_hvac_mode = HVACMode.OFF
+        else:
+            self._attr_hvac_modes = [HVACMode.OFF, hvac_master_mode]
+            self._attr_hvac_mode = (
+                HVACMode.OFF if self.zone_state["IsOFF"] else hvac_master_mode
+            )
         self._attr_current_temperature = float(self.zone_state["Temp"]) / 10.0
         self._attr_target_temperature = float(self.zone_state["SetTemp"]) / 10.0
         self._attr_current_humidity = float(self.zone_state.get("Umd", 0)) / 10.0
