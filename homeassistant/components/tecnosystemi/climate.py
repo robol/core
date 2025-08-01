@@ -56,13 +56,7 @@ class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
     )
-    _attr_hvac_modes = [
-        HVACMode.OFF,
-        HVACMode.HEAT,
-        HVACMode.COOL,
-        HVACMode.DRY,
-        HVACMode.FAN_ONLY,
-    ]
+    _attr_hvac_modes = [HVACMode.OFF, HVACMode.AUTO]
     _attr_hvac_mode = HVACMode.OFF
     _attr_hvac_action = None
     _attr_fan_modes = [FAN_AUTO, FAN_HIGH, FAN_MEDIUM, FAN_LOW]
@@ -88,8 +82,8 @@ class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
 
         self._attr_name = zone["Name"] + " - " + zone["Device"].Name
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._attr_unique_id)},
-            name=self._attr_name,
+            identifiers={(DOMAIN, zone["Device"].Serial)},
+            name=zone["Device"].Name,
             manufacturer="Tecnosystemi",
             model="ProAir",
         )
@@ -100,7 +94,7 @@ class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
     def update_attrs_from_state(self):
         """Update attributes from the current state."""
         self._attr_hvac_mode = (
-            HVACMode.OFF if self.zone_state["IsOFF"] else HVACMode.COOL
+            HVACMode.OFF if self.zone_state["IsOFF"] else HVACMode.AUTO
         )
         self._attr_current_temperature = float(self.zone_state["Temp"]) / 10.0
         self._attr_target_temperature = float(self.zone_state["SetTemp"]) / 10.0

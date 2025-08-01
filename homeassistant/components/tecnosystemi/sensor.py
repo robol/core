@@ -105,8 +105,8 @@ class TecnosystemiTemperatureSensorEntity(TecnosystemiSensorEntity):
         self._attr_unique_id = device_id + "_temperature"
         self._attr_name = "Temperature of " + zone["Name"] + " - " + zone["Device"].Name
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._attr_unique_id)},
-            name=self._attr_name,
+            identifiers={(DOMAIN, zone["Device"].Serial)},
+            name=zone["Device"].Name,
             manufacturer="Tecnosystemi",
             model="ProAir",
         )
@@ -139,8 +139,8 @@ class TecnosystemiHumiditySensorEntity(TecnosystemiSensorEntity):
         self._attr_unique_id = device_id + "_humidity"
         self._attr_name = "Humidity of " + zone["Name"] + " - " + zone["Device"].Name
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._attr_unique_id)},
-            name=self._attr_name,
+            identifiers={(DOMAIN, zone["Device"].Serial)},
+            name=zone["Device"].Name,
             manufacturer="Tecnosystemi",
             model="ProAir",
         )
