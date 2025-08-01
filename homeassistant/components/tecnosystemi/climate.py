@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from homeassistant.components.climate import (
@@ -22,6 +23,8 @@ from . import TecnosystemiConfigEntry
 from .api import TecnosystemiAPI
 from .coordinator import TecnosystemiCoordinator
 
+_LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -32,8 +35,24 @@ async def async_setup_entry(
     coordinator: TecnosystemiCoordinator = entry.runtime_data
     api = coordinator.api
 
-    entities = []
+    masters: dict[str, TecnosystemiMasterClimateEntity] = {}
+
+    entities: list[TecnosystemiClimateEntity | TecnosystemiMasterClimateEntity] = []
     for device_id in coordinator.data:
+        # Check if we have a master climate for this zone already. If we do not,
+        # create a new one to pass down to all zone thermostat
+        master_key = coordinator.data[device_id]["Device"].Serial
+        if master_key not in masters:
+            masters[master_key] = TecnosystemiMasterClimateEntity(
+                device_id=device_id,
+                zone=coordinator.data[device_id],
+                coordinator=coordinator,
+                api=api,
+                pin=entry.data[CONF_PIN],
+            )
+
+            entities.append(masters[master_key])
+
         entity = TecnosystemiClimateEntity(
             device_id=device_id,
             zone=coordinator.data[device_id],
@@ -44,6 +63,116 @@ async def async_setup_entry(
         entities.append(entity)
 
     async_add_entities(entities)
+
+
+class TecnosystemiMasterClimateEntity(CoordinatorEntity, ClimateEntity):
+    """Master Climate that controls the temperature of the A/C machine and the operating mode of the system."""
+
+    _attr_has_entity_name = False
+    _attr_hvac_modes = [HVACMode.HEAT, HVACMode.COOL, HVACMode.DRY, HVACMode.FAN_ONLY]
+    _attr_hvac_mode = HVACMode.OFF
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
+    _attr_target_temperature_step = 1.0
+
+    def __init__(
+        self,
+        device_id: str,
+        zone: dict,
+        coordinator: TecnosystemiCoordinator,
+        api: TecnosystemiAPI,
+        pin: str,
+    ) -> None:
+        """Initialize the climate entity."""
+        CoordinatorEntity.__init__(self, coordinator)
+
+        self.zone_state = zone
+        self.device_id = device_id
+        self._attr_unique_id = (
+            str(zone["Plant"].LVPL_Id) + "_" + str(zone["Device"].Serial)
+        )
+        self.coordinator = coordinator
+        self.api = api
+        self.pin = pin
+
+        self._attr_name = zone["Device"].Name + " - Master"
+        self._attr_device_info = zone["DeviceInfo"]
+
+        # self._handle_coordinator_update()
+        self.update_attrs_from_state()
+
+    def update_attrs_from_state(self):
+        """Update the variables in the entity after receiving an update from the coordinator."""
+        if not self.zone_state["DeviceState"]["IsCooling"]:
+            self._attr_hvac_mode = HVACMode.HEAT
+        elif self.zone_state["DeviceState"]["OperatingModeCooling"] == 1:
+            self._attr_hvac_mode = HVACMode.COOL
+        elif self.zone_state["DeviceState"]["OperatingModeCooling"] == 2:
+            self._attr_hvac_mode = HVACMode.DRY
+        elif self.zone_state["DeviceState"]["OperatingModeCooling"] == 3:
+            self._attr_hvac_mode = HVACMode.FAN_ONLY
+        else:
+            _LOGGER.warning("Unsupported mode in Tecnosystemi integration")
+
+        self._attr_target_temperature = (
+            float(self.zone_state["DeviceState"]["TempCan"]) / 10.0
+        )
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self.zone_state = self.coordinator.data[self.device_id]
+
+        self.update_attrs_from_state()
+        self.async_write_ha_state()
+
+    async def async_send_command(self, cmd: dict):
+        """Send a command to the Tecnosystemi API."""
+        await self.api.updateCUState(
+            self.zone_state["Device"],
+            self.pin,
+            cmd,
+        )
+
+        await self.coordinator.async_request_refresh()
+
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        """Set new HVAC mode."""
+        self._attr_hvac_mode = hvac_mode
+
+        if hvac_mode == HVACMode.HEAT:
+            is_cool = 0
+            cool_mod = self.zone_state["DeviceState"]["OperatingModeCooling"]
+        else:
+            is_cool = 1
+            if hvac_mode == HVACMode.COOL:
+                cool_mod = 1
+            elif hvac_mode == HVACMode.DRY:
+                cool_mod = 2
+            elif hvac_mode == HVACMode.FAN_ONLY:
+                cool_mod = 3
+            else:
+                _LOGGER.warning("Unsupported mode received in Tecnosystemi API")
+
+        cmd = {
+            "is_off": 1 if self.zone_state["DeviceState"]["IsOFF"] else 0,
+            "is_cool": is_cool,
+            "cool_mod": cool_mod,
+            "t_can": int(self.zone_state["DeviceState"]["TempCan"]),
+        }
+        await self.async_send_command(cmd)
+
+        self.async_write_ha_state()
+
+    async def async_set_temperature(self, **kwargs: Any) -> None:
+        """Set new target temperature."""
+        cmd = {
+            "is_off": 1 if self.zone_state["DeviceState"]["IsOFF"] else 0,
+            "is_cool": 1 if self.zone_state["DeviceState"]["IsCooling"] else 0,
+            "cool_mod": self.zone_state["DeviceState"]["OperatingModeCooling"],
+            "t_can": int(kwargs["temperature"] * 10),
+        }
+        await self.async_send_command(cmd)
 
 
 class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
