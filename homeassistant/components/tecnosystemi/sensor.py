@@ -102,7 +102,7 @@ class TecnosystemiTemperatureSensorEntity(TecnosystemiSensorEntity):
 
         self._attr_unique_id = device_id + "_temperature"
         self._attr_name = "Temperature of " + zone["Name"] + " - " + zone["Device"].Name
-        self._attr_device_info = self._attr_device_info = zone["DeviceInfo"]
+        self._attr_device_info = zone["DeviceInfo"]
 
         self.update_attrs_from_state()
 

@@ -10,7 +10,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from .api import TecnosystemiAPI
 from .coordinator import TecnosystemiCoordinator
 
-_PLATFORMS: list[Platform] = [Platform.CLIMATE, Platform.SENSOR]
+_PLATFORMS: list[Platform] = [Platform.CLIMATE, Platform.SENSOR, Platform.SWITCH]
 
 type TecnosystemiConfigEntry = ConfigEntry[TecnosystemiCoordinator]
 

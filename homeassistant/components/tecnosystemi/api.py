@@ -186,8 +186,8 @@ class TecnosystemiAPI:
             cmd["is_off"] = 0
         if "is_cool" not in cmd:
             cmd["is_cool"] = 1
-        if "cool_mode" not in cmd:
-            cmd["cool_mode"] = 1
+        if "cool_mod" not in cmd:
+            cmd["cool_mod"] = 1
         if "t_can" not in cmd:
             cmd["t_can"] = 230
 
@@ -198,8 +198,8 @@ class TecnosystemiAPI:
 
         data = {
             "Serial": device.Serial,
-            "Pin": pin,
             "Name": device.Name,
+            "Pin": pin,
             "Cmd": json.dumps(cmd),
         }
 
