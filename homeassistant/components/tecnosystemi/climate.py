@@ -15,13 +15,11 @@ from homeassistant.components.climate import (
 )
 from homeassistant.const import CONF_PIN, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import TecnosystemiConfigEntry
 from .api import TecnosystemiAPI
-from .const import DOMAIN
 from .coordinator import TecnosystemiCoordinator
 
 
@@ -81,12 +79,7 @@ class TecnosystemiClimateEntity(CoordinatorEntity, ClimateEntity):
         self.pin = pin
 
         self._attr_name = zone["Name"] + " - " + zone["Device"].Name
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, zone["Device"].Serial)},
-            name=zone["Device"].Name,
-            manufacturer="Tecnosystemi",
-            model="ProAir",
-        )
+        self._attr_device_info = zone["DeviceInfo"]
 
         # self._handle_coordinator_update()
         self.update_attrs_from_state()

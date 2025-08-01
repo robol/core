@@ -7,7 +7,10 @@ from datetime import timedelta
 import logging
 
 from homeassistant.const import CONF_PIN
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -80,6 +83,14 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
                             "FInv": state["FInv"],
                             "FEst": state["FEst"],
                         }
+                        zone["DeviceInfo"] = DeviceInfo(
+                            identifiers={(DOMAIN, zone["Device"].Serial)},
+                            name=zone["Device"].Name,
+                            manufacturer="Tecnosystemi",
+                            model="ProAir",
+                            serial_number=zone["Device"].Serial,
+                            sw_version=zone["Device"].FWVer,
+                        )
                         data[f"{plant.LVPL_Id}_{device.Serial}_{zone['ZoneId']}"] = zone
 
             return data

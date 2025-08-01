@@ -7,13 +7,11 @@ from typing import Any
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import CONF_PIN, PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import TecnosystemiConfigEntry
 from .api import TecnosystemiAPI
-from .const import DOMAIN
 from .coordinator import TecnosystemiCoordinator
 
 
@@ -104,12 +102,7 @@ class TecnosystemiTemperatureSensorEntity(TecnosystemiSensorEntity):
 
         self._attr_unique_id = device_id + "_temperature"
         self._attr_name = "Temperature of " + zone["Name"] + " - " + zone["Device"].Name
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, zone["Device"].Serial)},
-            name=zone["Device"].Name,
-            manufacturer="Tecnosystemi",
-            model="ProAir",
-        )
+        self._attr_device_info = self._attr_device_info = zone["DeviceInfo"]
 
         self.update_attrs_from_state()
 
@@ -138,12 +131,7 @@ class TecnosystemiHumiditySensorEntity(TecnosystemiSensorEntity):
 
         self._attr_unique_id = device_id + "_humidity"
         self._attr_name = "Humidity of " + zone["Name"] + " - " + zone["Device"].Name
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, zone["Device"].Serial)},
-            name=zone["Device"].Name,
-            manufacturer="Tecnosystemi",
-            model="ProAir",
-        )
+        self._attr_device_info = self._attr_device_info = zone["DeviceInfo"]
 
         self.update_attrs_from_state()
 
