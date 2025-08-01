@@ -62,6 +62,24 @@ class TecnosystemiCoordinator(DataUpdateCoordinator):
                     for zone in state["Zones"]:
                         zone["Device"] = device
                         zone["Plant"] = plant
+                        zone["DeviceState"] = {
+                            "Errors": state["Errors"],
+                            "Serial": state["Serial"],
+                            "Name": state["Name"],
+                            "FWVer": state["FWVer"],
+                            "IsOFF": state["IsOFF"],
+                            "IsCooling": state["IsCooling"],
+                            "OperatingModeCooling": state["OperatingModeCooling"],
+                            "LastConfigUpdate": state["LastConfigUpdate"],
+                            "LastSyncUpdate": state["LastSyncUpdate"],
+                            "NumErrors": state["NumErrors"],
+                            "Icon": state["Icon"],
+                            "IrPresent": data,
+                            "TempCan": state["TempCan"],
+                            "IP": state["IP"],
+                            "FInv": state["FInv"],
+                            "FEst": state["FEst"],
+                        }
                         data[f"{plant.LVPL_Id}_{device.Serial}_{zone['ZoneId']}"] = zone
 
             return data

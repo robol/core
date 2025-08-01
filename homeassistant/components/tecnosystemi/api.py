@@ -174,8 +174,54 @@ class TecnosystemiAPI:
                 return await response.json()
             return None
 
+    async def updateCUState(self, device, pin, cmd):
+        """Update the state of a specific device (globally across different zones)."""
+        token = await self.calcToken()
+        if token is None:
+            raise RuntimeError("Token is not available")
+
+        cmd["c"] = "upd_cu"
+        cmd["pin"] = pin
+        if "is_off" not in cmd:
+            cmd["is_off"] = 0
+        if "is_cool" not in cmd:
+            cmd["is_cool"] = 1
+        if "cool_mode" not in cmd:
+            cmd["cool_mode"] = 1
+        if "t_can" not in cmd:
+            cmd["t_can"] = 230
+
+        # I suspect that these two are related to winter (inverno) and summer (estate).
+        # they appear to be always set to 1 in the API, at least on my machine.
+        cmd["f_inv"] = 1
+        cmd["f_est"] = 1
+
+        data = {
+            "Serial": device.Serial,
+            "Pin": pin,
+            "Name": device.Name,
+            "Cmd": json.dumps(cmd),
+        }
+
+        url = self.base_url + "/api/v1/UpdateCUData"
+        auth = aiohttp.BasicAuth(self.username, "PwdProAir")
+        headers = {"Token": token, "Content-Type": "application/json"}
+        async with self.session.post(
+            url, json=data, auth=auth, headers=headers
+        ) as response:
+            if response.status == 200:
+                response_data = await response.json()
+                if response_data.get("ResCode") == 0:
+                    return True
+                raise RuntimeError(
+                    f"Update failed with error code: {response_data.get('ResCode')}"
+                )
+            raise RuntimeError(
+                f"Update failed with HTTP status code: {response.status}"
+            )
+
     async def updateDeviceState(self, device, pin, zoneid, cmd):
-        """Update the state of a specific device."""
+        """Update the state of a specific zone in the device."""
         token = await self.calcToken()
         if token is None:
             raise RuntimeError("Token is not available")
