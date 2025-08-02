@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import json
@@ -105,6 +106,10 @@ class TecnosystemiAPI:
         self.user_id = None
         self.session = aiohttp.ClientSession()
 
+        # Since the calls to the API needs to be done sequentially, we use a lock
+        # for these tasks, ensuring that there is no overlapping.
+        self.api_lock = asyncio.Lock()
+
     def getAESTool(self):
         """Return an instance of AESTool for encryption/decryption."""
         return AESTool(self.device_id[0:8] + self.salt)
@@ -169,7 +174,10 @@ class TecnosystemiAPI:
         url = self.base_url + f"/api/v1/GetCUState?cuSerial={device.Serial}&PIN={pin}"
         auth = aiohttp.BasicAuth(self.username, "PwdProAir")
         headers = {"Token": token}
-        async with self.session.get(url, auth=auth, headers=headers) as response:
+        async with (
+            self.api_lock,
+            self.session.get(url, auth=auth, headers=headers) as response,
+        ):
             if response.status == 200:
                 return await response.json()
             return None
@@ -206,9 +214,10 @@ class TecnosystemiAPI:
         url = self.base_url + "/api/v1/UpdateCUData"
         auth = aiohttp.BasicAuth(self.username, "PwdProAir")
         headers = {"Token": token, "Content-Type": "application/json"}
-        async with self.session.post(
-            url, json=data, auth=auth, headers=headers
-        ) as response:
+        async with (
+            self.api_lock,
+            self.session.post(url, json=data, auth=auth, headers=headers) as response,
+        ):
             if response.status == 200:
                 response_data = await response.json()
                 if response_data.get("ResCode") == 0:
@@ -247,9 +256,10 @@ class TecnosystemiAPI:
         url = self.base_url + "/api/v1/UpdateZonaData"
         auth = aiohttp.BasicAuth(self.username, "PwdProAir")
         headers = {"Token": token, "Content-Type": "application/json"}
-        async with self.session.post(
-            url, json=data, auth=auth, headers=headers
-        ) as response:
+        async with (
+            self.api_lock,
+            self.session.post(url, json=data, auth=auth, headers=headers) as response,
+        ):
             if response.status == 200:
                 response_data = await response.json()
                 if response_data.get("ResCode") == 0:
@@ -276,9 +286,10 @@ class TecnosystemiAPI:
         url = self.base_url + "/apiTS/v2/Login"
         auth = aiohttp.BasicAuth("UsrProAir", "PwdProAir")
         headers = {"Token": self.fix_token, "Content-Type": "application/json"}
-        async with self.session.post(
-            url, json=data, auth=auth, headers=headers
-        ) as response:
+        async with (
+            self.api_lock,
+            self.session.post(url, json=data, auth=auth, headers=headers) as response,
+        ):
             if response.status == 200:
                 login_data = await response.json()
                 if login_data.get("ResCode") != 0:
